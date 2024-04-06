@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Data
 @Builder
@@ -13,4 +14,5 @@ public class ExamResponse {
     private LocalDateTime endDate;
     private String name;
     private int weight;
+    private Set<CandidateEvaluationGridDTO> evaluations;
 }

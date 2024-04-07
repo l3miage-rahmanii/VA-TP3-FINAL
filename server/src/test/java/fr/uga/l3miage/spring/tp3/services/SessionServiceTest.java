@@ -153,12 +153,13 @@ public class SessionServiceTest {
                 }).collect(Collectors.toSet()))
                 .build();
 
+        ///when
         when(sessionMapper.toResponse(any(EcosSessionEntity.class))).thenReturn(sessionResponse);
 
 
         Set<CandidateEvaluationGridDTO> actualEvaluations = sessionService.endSessionEvaluation(id);
 
-        // Assertions pour vérifier que les évaluations attendues sont retournées
+        //then
         assertNotNull(actualEvaluations, "Le résultat des évaluations est null");
         assertEquals(evaluations.size(), actualEvaluations.size(), "Le nombre d'évaluations retournées incorecte ");
         assertTrue(actualEvaluations.containsAll(evaluations), "Les évaluations retournées ne correspondent pas aux évaluations attendues");

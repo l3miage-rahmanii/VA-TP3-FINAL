@@ -5,6 +5,7 @@ import fr.uga.l3miage.spring.tp3.components.ExamComponent;
 import fr.uga.l3miage.spring.tp3.components.SessionComponent;
 import fr.uga.l3miage.spring.tp3.enums.SessionStatus;
 import fr.uga.l3miage.spring.tp3.exceptions.rest.CreationSessionRestException;
+import fr.uga.l3miage.spring.tp3.exceptions.rest.NotFoundSessionEntityRestExeption;
 import fr.uga.l3miage.spring.tp3.exceptions.technical.ExamNotFoundException;
 import fr.uga.l3miage.spring.tp3.exceptions.technical.SessionNotFoundExeption;
 import fr.uga.l3miage.spring.tp3.mappers.SessionMapper;
@@ -53,9 +54,10 @@ public class SessionServiceTest {
 
 
     @Test
-    void testCreateSession() throws ExamNotFoundException {
+    void testCreateSessionSucces() throws ExamNotFoundException {
         //given
-        SessionProgrammationCreationRequest programmation = SessionProgrammationCreationRequest.builder()
+        SessionProgrammationCreationRequest programmationCreationRequest = SessionProgrammationCreationRequest
+                .builder()
                 .steps(Set.of())
                 .build();
 
@@ -65,7 +67,7 @@ public class SessionServiceTest {
                 .examsId(Set.of())
                 .startDate(LocalDateTime.now())
                 .endDate(LocalDateTime.now().plusDays(1))
-                .ecosSessionProgrammation(programmation)
+                .ecosSessionProgrammation(programmationCreationRequest)
                 .build();
 
         EcosSessionEntity ecosSessionEntity = sessionMapper.toEntity(request);
@@ -145,7 +147,7 @@ public class SessionServiceTest {
                     ExamResponse examResponse = ExamResponse.builder()
                             .name(exam.getName())
                             .weight(exam.getWeight())
-                            .evaluations(evaluations) // Associe les évaluations à l'examen
+                            .evaluations(evaluations)
                             .build();
                     return examResponse;
                 }).collect(Collectors.toSet()))
@@ -157,8 +159,8 @@ public class SessionServiceTest {
         Set<CandidateEvaluationGridDTO> actualEvaluations = sessionService.endSessionEvaluation(id);
 
         // Assertions pour vérifier que les évaluations attendues sont retournées
-        assertNotNull(actualEvaluations, "Le résultat des évaluations ne devrait pas être null");
-        assertEquals(evaluations.size(), actualEvaluations.size(), "Le nombre d'évaluations retournées ne correspond pas");
+        assertNotNull(actualEvaluations, "Le résultat des évaluations est null");
+        assertEquals(evaluations.size(), actualEvaluations.size(), "Le nombre d'évaluations retournées incorecte ");
         assertTrue(actualEvaluations.containsAll(evaluations), "Les évaluations retournées ne correspondent pas aux évaluations attendues");
 
         // Vérifier que les méthodes mockées ont été appelées comme prévu
@@ -166,4 +168,23 @@ public class SessionServiceTest {
         verify(sessionMapper).toResponse(any(EcosSessionEntity.class));
 
     }
+
+    @Test
+    void testEndSessionEvaluationFail() throws NotFoundSessionEntityRestExeption, SessionNotFoundExeption {
+        //given
+        Long id = 123174L;
+
+        // Simuler le comportement de sessionComponent pour lancer une NotFoundSessionEntityRestExeption lorsque la session n'est pas trouvée
+        when(sessionComponent.endSessionEvaluation(id)).thenThrow(new NotFoundSessionEntityRestExeption("Session non trouvée"));
+
+        // When - Then
+        assertThrows(NotFoundSessionEntityRestExeption.class, () -> sessionService.endSessionEvaluation(id),
+                "Une exception aurait dû être levée lorsque la session n'est pas trouvée");
+
+        // Vérifier que les méthodes mockées ont été appelées comme prévu
+        verify(sessionComponent).endSessionEvaluation(id);
+        verifyNoInteractions(sessionMapper); // Aucune interaction avec sessionMapper ne devrait avoir lieu
+    }
+
+
 }

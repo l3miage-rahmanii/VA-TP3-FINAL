@@ -34,7 +34,7 @@ public class SessionComponent {
         return ecosSessionRepository.findById(id).orElseThrow(() -> new SessionNotFoundExeption((String.format("La session %s est introuvable", id))));
     }
 
-    private boolean isLastStepPassed(EcosSessionEntity session) {
+     boolean isLastStepPassed(EcosSessionEntity session) {
         if (session.getEcosSessionProgrammationEntity() == null ||
         session.getEcosSessionProgrammationEntity().getEcosSessionProgrammationStepEntities() == null ||
         session.getEcosSessionProgrammationEntity().getEcosSessionProgrammationStepEntities().isEmpty()) {

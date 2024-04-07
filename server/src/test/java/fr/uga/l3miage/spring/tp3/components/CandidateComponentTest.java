@@ -1,5 +1,6 @@
 package fr.uga.l3miage.spring.tp3.components;
 import fr.uga.l3miage.spring.tp3.components.CandidateComponent;
+import fr.uga.l3miage.spring.tp3.exceptions.technical.CandidateNotFoundException;
 import fr.uga.l3miage.spring.tp3.models.CandidateEntity;
 import fr.uga.l3miage.spring.tp3.models.CandidateEvaluationGridEntity;
 import fr.uga.l3miage.spring.tp3.repositories.CandidateEvaluationGridRepository;
@@ -13,8 +14,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
@@ -49,6 +49,36 @@ public class CandidateComponentTest {
     }
 
     @Test
+    void getCandidatByIdNotFound(){
+        // Given
+        Long candidatId = 999L; // ID d'un candidat qui n'existe pas
+
+        CandidateEntity candidate1 = CandidateEntity
+                .builder()
+                .email("test@gmail.com")
+                .firstname("Imen")
+                .build();
+
+        CandidateEntity candidate2 = CandidateEntity
+                .builder()
+                .email("toto@gmail.com")
+                .firstname("Bachir")
+                .build();
+
+        candidateRepository.save(candidate1);
+        candidateRepository.save(candidate2);
+
+        when(candidateRepository.findById(candidatId)).thenReturn(Optional.empty());
+
+        // Then
+
+        assertThrows(CandidateNotFoundException.class, () -> {
+            candidateComponent.getCandidatById(candidatId);
+        });
+    }
+
+
+    @Test
     void getAllEliminatedCandidateFound(){
         // Given
         when(candidateEvaluationGridRepository.findAllByGradeIsLessThanEqual(5)).thenReturn(Set.of());
@@ -57,5 +87,7 @@ public class CandidateComponentTest {
         // Then
         assertThat(candidateEntities).isEmpty();
     }
+
+    
 
 }

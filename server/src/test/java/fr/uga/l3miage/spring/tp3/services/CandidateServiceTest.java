@@ -35,11 +35,6 @@ public class CandidateServiceTest {
     @MockBean
     private CandidateComponent candidateComponent;
 
-    @MockBean
-    private CandidateRepository candidateRepository;
-
-    @MockBean
-    private CandidateEvaluationGridRepository candidateEvaluationGridRepository;
     @Test
     void TestGetCandidateAverageSuccess() throws CandidateNotFoundException {
         // given

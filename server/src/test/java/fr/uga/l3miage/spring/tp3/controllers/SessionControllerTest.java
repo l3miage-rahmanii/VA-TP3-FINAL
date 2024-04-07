@@ -25,9 +25,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -61,6 +59,7 @@ public class SessionControllerTest {
     }
     @Test
     void createSessionSuccess(){
+        //given
         SessionCreationRequest request = SessionCreationRequest.builder()
                 .name("test")
                 .startDate(LocalDateTime.MIN)
@@ -69,14 +68,17 @@ public class SessionControllerTest {
                 .ecosSessionProgrammation(SessionProgrammationCreationRequest.builder().steps(new HashSet<>()).build())
                 .build();
 
+        //when
         ResponseEntity<SessionResponse> responseEntity = testRestTemplate.postForEntity("/api/sessions/create", request, SessionResponse.class);
 
+        //when
         assertThat(responseEntity.getStatusCodeValue()).isEqualTo(201);
         assertThat(responseEntity.getBody()).isNotNull();
     }
 
     @Test
     void createSessionFailed() {
+        //given
         when(ecosSessionService.createSession(any(SessionCreationRequest.class)))
                 .thenThrow(new CreationSessionRestException("Session creation failed"));
 
@@ -88,16 +90,16 @@ public class SessionControllerTest {
                 .build();
 
 
-
-
+        //when
         ResponseEntity<String> responseEntity = testRestTemplate.postForEntity("/api/sessions/create", request, String.class);
 
-        // Vérifier que la réponse est bien un statut 400
+        //then
         assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
     public void endSessionEvaluationSuccess() {
+        //given
         EcosSessionEntity session = EcosSessionEntity.builder()
                 .name("Session normale")
                 .status(SessionStatus.EVAL_STARTED)
@@ -137,40 +139,79 @@ public class SessionControllerTest {
         ecosSessionRepository.save(session);
 
 
-        // Envoi de la requête pour terminer l'évaluation
-        ResponseEntity<String> response = testRestTemplate.exchange(
+        //when
+        ResponseEntity<String> response = testRestTemplate.exchange( //Envoi de la requête pour terminer l'évaluation
                 "/api/sessions/{id}/end-eval",
                 HttpMethod.PUT,
                 null,
                 String.class,
                 session.getId());
 
+        //then
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
 
     @Test
-    public void endSessionEvaluationFailure() {
-        // Given
-        Long sessionId = 999999L; // Un ID de session inexistant
+    public void whenUpdateSessionStateCausesConflict() {
 
-        // Quand la fin de l'évaluation de session est tentée, nous simulons une session non trouvée en retournant null
-        when(ecosSessionRepository.findById(sessionId)).thenReturn(Optional.empty());
+        //given
+        EcosSessionEntity session = EcosSessionEntity.builder()
+                .name("session normale")
+                .status(SessionStatus.EVAL_ENDED)
+                .build();
 
-        // Message d'erreur pour quand la session n'est pas trouvée
-        String expectedErrorMessage = "Session not found";
+        ecosSessionRepository.save(session);
 
-        // When
+        EcosSessionProgrammationEntity programmationEntity = EcosSessionProgrammationEntity.builder()
+                .label("Test")
+                .build();
+
+        sessionProgrammationRepository.save(programmationEntity);
+
+        // Définir une date/heure dans le passé pour lastStep
+        LocalDateTime stepDateTime = LocalDateTime.now().minusDays(1);
+
+
+        EcosSessionProgrammationStepEntity lastStep = EcosSessionProgrammationStepEntity.builder()
+                .dateTime(stepDateTime)
+                .ecosSessionProgrammationEntity(programmationEntity)
+                .description("Final step")
+                .build();
+
+
+        sessionProgrammationStepRepository.save(lastStep);
+
+        Set<EcosSessionProgrammationStepEntity> steps = Set.of(lastStep);
+
+        programmationEntity.setEcosSessionProgrammationStepEntities(steps);
+
+        sessionProgrammationRepository.save(programmationEntity);
+
+        session.setEcosSessionProgrammationEntity(programmationEntity);
+
+        ecosSessionRepository.save(session);
+
+        final Map<String, Object> urlParams = new HashMap<>();
+        urlParams.put("id",session.getId() );
+
+        //when
+        // Envoi de la requête pour terminer l'évaluation
         ResponseEntity<String> response = testRestTemplate.exchange(
                 "/api/sessions/{id}/end-eval",
                 HttpMethod.PUT,
                 null,
                 String.class,
-                sessionId);
+                urlParams); // Utiliser l'ID de la session sauvegardée
 
-        // Then
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertThat(response.getBody().contains(expectedErrorMessage));
+        //then
+        // Vérifier que le code de statut est 409 CONFLIT
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+
+        // Vérifier les détails de la réponse
+        assertThat(response.getBody()).contains("URI");
+        assertThat(response.getBody()).contains("Message d'erreur");
+        assertThat(response.getBody()).contains("État actuel de la session");
     }
 
 

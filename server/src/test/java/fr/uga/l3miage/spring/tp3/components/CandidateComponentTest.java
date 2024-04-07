@@ -51,12 +51,12 @@ public class CandidateComponentTest {
     @Test
     void getCandidatByIdNotFound(){
         // Given
-        Long candidatId = 999L; // ID d'un candidat qui n'existe pas
+        Long candidatId = 1234L;
 
         CandidateEntity candidate1 = CandidateEntity
                 .builder()
                 .email("test@gmail.com")
-                .firstname("Imen")
+                .firstname("Idris")
                 .build();
 
         CandidateEntity candidate2 = CandidateEntity
@@ -68,6 +68,7 @@ public class CandidateComponentTest {
         candidateRepository.save(candidate1);
         candidateRepository.save(candidate2);
 
+        //when
         when(candidateRepository.findById(candidatId)).thenReturn(Optional.empty());
 
         // Then

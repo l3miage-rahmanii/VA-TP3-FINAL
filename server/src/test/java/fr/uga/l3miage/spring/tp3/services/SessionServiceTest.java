@@ -87,7 +87,7 @@ public class SessionServiceTest {
 
     @Test
     void testCreateSessionFailed() throws ExamNotFoundException{
-
+        //given
         SessionProgrammationCreationRequest programmation = SessionProgrammationCreationRequest.builder()
                 .steps(Set.of())
                 .build();
@@ -100,7 +100,7 @@ public class SessionServiceTest {
                 .endDate(LocalDateTime.now().plusDays(1))
                 .ecosSessionProgrammation(programmation)
                 .build();
-
+        //when
         when(examComponent.getAllById(Set.of())).thenThrow(new ExamNotFoundException("Exams not found"));
 
 
@@ -184,7 +184,7 @@ public class SessionServiceTest {
 
         // Vérifier que les méthodes mockées ont été appelées comme prévu
         verify(sessionComponent).endSessionEvaluation(id);
-        verifyNoInteractions(sessionMapper); // Aucune interaction avec sessionMapper ne devrait avoir lieu
+        verifyNoInteractions(sessionMapper);
     }
 
 

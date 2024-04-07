@@ -127,6 +127,7 @@ public class CandidateRepositoryTest {
 
     @Test
     void findAllByHasExtraTimeFalseAndBirthDateBefore(){
+        //given
         CandidateEntity candidateEntity1 = CandidateEntity
                 .builder()
                 .firstname("test")
@@ -164,8 +165,11 @@ public class CandidateRepositoryTest {
         candidateRepository.save(candidateEntity3);
         candidateRepository.save(candidateEntity4);
 
+        //when
         Set<CandidateEntity> responsesCandidateEntity = candidateRepository.findAllByHasExtraTimeFalseAndBirthDateBefore(LocalDate.of(2002,1,1));
 
+
+        //then
         assertThat(responsesCandidateEntity).hasSize(1);
         assertThat(responsesCandidateEntity.stream().findFirst().get().getBirthDate()).isEqualTo(LocalDate.of(2001,7,5));
         assertThat(responsesCandidateEntity.stream().findFirst().get().isHasExtraTime()).isFalse();
